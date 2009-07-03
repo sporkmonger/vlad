@@ -224,7 +224,8 @@ class Rake::RemoteTask < Rake::Task
         data = stream.readpartial(1024)
         out_stream[stream].write data
 
-        if stream == err and data =~ /^Password:/ then
+        if stream == err &&
+            (data =~ /^Password:/ || data =~ /^\[sudo\] password for .+:/)
           inn.puts sudo_password
           data << "\n"
           $stderr.write "\n"
