@@ -17,7 +17,7 @@ namespace :vlad do
   remote_task :start_app, :roles => :app do
     run "touch #{current_release}/tmp/restart.txt"
   end
-  
+
   desc 'Restarts the apache servers'
   remote_task :start_web, :roles => :app do
     run "sudo #{app_command} configtest && sudo #{app_command} graceful"
