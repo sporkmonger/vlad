@@ -2,10 +2,15 @@ require 'vlad'
 
 namespace :vlad do
   set :app_command, "/etc/init.d/httpd"
+  set :passenger_config, nil
 
   remote_task :setup_app, :roles => :web do
-    config_file = "/etc/httpd/conf.d/vhosts/#{application}_#{environment}.conf"
-    run %Q(sudo test -e #{config_file} || sudo sh -c "ruby /etc/sliceconfig/install/interactive/passenger_config.rb '#{app_domain}' '#{application}' '#{environment}' '#{app_port}' #{only_www ? 1 : 0} > #{config_file}")
+    unless passenger_config
+      set :passenger_config,
+        "/etc/httpd/conf.d/vhosts/#{application}_#{environment}.conf"
+    end
+
+    run %Q(sudo test -e #{passenger_config} || sudo sh -c "ruby /etc/sliceconfig/install/interactive/passenger_config.rb '#{app_domain}' '#{application}' '#{environment}' '#{app_port}' #{only_www ? 1 : 0} > #{passenger_config}")
   end
 
   desc 'Restart Passenger'
