@@ -39,14 +39,14 @@ namespace :vlad do
   def chown(path)
     "#{sudo_cmd} chown -R #{app_user}:#{app_group} #{path}/"
   end
-  
+
   def clear_asset_cache
     dirs = [ "#{current_release}/public/javascripts/cached",
              "#{current_release}/public/stylesheets/cached"
            ].join(" ")
     "sudo -u #{app_user} rm -rf #{dirs}"
   end
-  
+
   def install_crontab
     cron_file = "/etc/cron.d/#{application}_#{environment}.cron"
     app_cron_file = "#{current_release}/config/cron/#{environment}.cron"
@@ -77,20 +77,21 @@ namespace :vlad do
   remote_task :update, :roles => :app do
     symlink = false
     begin
-      run ["cd #{scm_path}",
-            "#{source.checkout revision, '.'}",
-            "#{source.export ".", release_path}",
-            "chmod -R g+w #{latest_release}",
-            chown(latest_release),
-            "rm -rf #{latest_release}/log #{latest_release}/public/system #{latest_release}/tmp/pids",
-            "mkdir -p #{latest_release}/db #{latest_release}/tmp",
-            "ln -s #{shared_path}/log #{latest_release}/log",
-            "ln -s #{shared_path}/system #{latest_release}/public/system",
-            "ln -s #{shared_path}/pids #{latest_release}/tmp/pids",
-          ].join(" && ")
-      
+      sequence = ["cd #{scm_path}",
+        "#{source.checkout revision, '.'}",
+        "#{source.export ".", release_path}",
+        "chmod -R g+w #{latest_release}",
+        chown(latest_release),
+        "rm -rf #{latest_release}/log #{latest_release}/public/system #{latest_release}/tmp/pids",
+        "mkdir -p #{latest_release}/db #{latest_release}/tmp",
+        "ln -s #{shared_path}/log #{latest_release}/log",
+        "ln -s #{shared_path}/pids #{latest_release}/tmp/pids",
+        "ln -s #{shared_path}/system #{latest_release}/public/system"
+      ]
+      run sequence.join(" && ")
+
       install_crontab
-      
+
       symlink = true
       run "rm -f #{current_path} && ln -s #{latest_release} #{current_path}"
       run "echo #{now} $USER #{revision} #{File.basename release_path} >> #{deploy_to}/revisions.log"
@@ -109,12 +110,12 @@ namespace :vlad do
           chown(current_path),
           clear_asset_cache
         ].join(" && ")
-        
+
     install_crontab
   end
 
   desc "Fixes permissions on the latest release and shared directory".cleanup
-  
+
   remote_task :fix_permissions, :roles => :app do
     run [ chown(current_path),
           chown(shared_path)
